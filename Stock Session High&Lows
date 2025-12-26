@@ -1,0 +1,122 @@
+//@version=6
+indicator("Eley Stock Session High/Low Rays + Open Lines (UTC+2)", overlay=true, max_lines_count=500, max_labels_count=500)
+
+// ───── Session Times (Stock Market Opens) ─────
+string tz = "UTC+2"
+asiaOpenTime   = 0300
+asiaCloseTime  = 1100
+londonOpenTime = 1000
+londonCloseTime= 1800
+nyOpenTime     = 1630
+nyCloseTime    = 2300
+
+// ───── Utility: Check if bar is within session ─────
+f_inSession(startTime, endTime) =>
+    not na(time(timeframe.period, str.tostring(startTime,"0000") + "-" + str.tostring(endTime,"0000"), tz))
+
+// ───── Track session state ─────
+asiaSession   = f_inSession(asiaOpenTime, asiaCloseTime)
+londonSession = f_inSession(londonOpenTime, londonCloseTime)
+nySession     = f_inSession(nyOpenTime, nyCloseTime)
+
+// ───── Variables ─────
+var float asiaHigh = na
+var float asiaLow  = na
+var float londonHigh = na
+var float londonLow  = na
+var float nyHigh = na
+var float nyLow  = na
+
+var int asiaHighBar = na
+var int asiaLowBar  = na
+var int londonHighBar = na
+var int londonLowBar  = na
+var int nyHighBar = na
+var int nyLowBar  = na
+
+var line asiaHighLine = na
+var line asiaLowLine  = na
+var line londonHighLine = na
+var line londonLowLine  = na
+var line nyHighLine = na
+var line nyLowLine  = na
+
+var line asiaOpenLine = na
+var line londonOpenLine = na
+var line nyOpenLine = na
+
+// ───── Function to draw/update horizontal rays ─────
+f_draw_ray(val, barIdx, oldLine, col) =>
+    line.delete(oldLine)
+    line.new(barIdx, val, bar_index + 1, val, extend=extend.right, color=col, width=2)
+
+// ───── Function to draw vertical dashed line at session open ─────
+f_draw_open_line(barIdx, oldLine, col) =>
+    line.delete(oldLine)
+    line.new(barIdx, high, barIdx, low, color=col, width=2, style=line.style_dashed, extend=extend.both)
+
+// ───── Process each session ─────
+
+// ASIA
+if asiaSession
+    if na(asiaHigh) or high > asiaHigh
+        asiaHigh := high
+        asiaHighBar := bar_index
+    if na(asiaLow) or low < asiaLow
+        asiaLow := low
+        asiaLowBar := bar_index
+
+    // Vertical line at session open
+    if not asiaSession[1]
+        asiaOpenLine := f_draw_open_line(bar_index, asiaOpenLine, color.red)
+
+if not asiaSession and asiaSession[1]  // session ended
+    if not na(asiaHigh) and not na(asiaLow)
+        asiaHighLine := f_draw_ray(asiaHigh, asiaHighBar, asiaHighLine, color.red)
+        asiaLowLine := f_draw_ray(asiaLow, asiaLowBar, asiaLowLine, color.red)
+    asiaHigh := na
+    asiaLow  := na
+    asiaHighBar := na
+    asiaLowBar := na
+
+// LONDON
+if londonSession
+    if na(londonHigh) or high > londonHigh
+        londonHigh := high
+        londonHighBar := bar_index
+    if na(londonLow) or low < londonLow
+        londonLow := low
+        londonLowBar := bar_index
+
+    if not londonSession[1]
+        londonOpenLine := f_draw_open_line(bar_index, londonOpenLine, color.blue)
+
+if not londonSession and londonSession[1]
+    if not na(londonHigh) and not na(londonLow)
+        londonHighLine := f_draw_ray(londonHigh, londonHighBar, londonHighLine, color.blue)
+        londonLowLine := f_draw_ray(londonLow, londonLowBar, londonLowLine, color.blue)
+    londonHigh := na
+    londonLow  := na
+    londonHighBar := na
+    londonLowBar := na
+
+// NEW YORK
+if nySession
+    if na(nyHigh) or high > nyHigh
+        nyHigh := high
+        nyHighBar := bar_index
+    if na(nyLow) or low < nyLow
+        nyLow := low
+        nyLowBar := bar_index
+
+    if not nySession[1]
+        nyOpenLine := f_draw_open_line(bar_index, nyOpenLine, color.green)
+
+if not nySession and nySession[1]
+    if not na(nyHigh) and not na(nyLow)
+        nyHighLine := f_draw_ray(nyHigh, nyHighBar, nyHighLine, color.green)
+        nyLowLine := f_draw_ray(nyLow, nyLowBar, nyLowLine, color.green)
+    nyHigh := na
+    nyLow  := na
+    nyHighBar := na
+    nyLowBar := na
